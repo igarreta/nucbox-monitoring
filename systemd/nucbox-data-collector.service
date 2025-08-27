@@ -1,0 +1,15 @@
+[Unit]
+Description=NucBox Thermal Data Collector
+Documentation=https://github.com/igarreta/nucbox-monitoring
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/nucbox-data-collector.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nucbox-collector
+
+[Install]
+WantedBy=multi-user.target

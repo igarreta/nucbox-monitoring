@@ -1,0 +1,39 @@
+[Unit]
+Description=NucBox Monitoring Service
+Documentation=https://github.com/igarreta/nucbox-monitoring
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rsi
+Group=rsi
+WorkingDirectory=/home/rsi/nucbox-monitoring
+Environment=PYTHONPATH=/home/rsi/nucbox-monitoring
+ExecStart=/usr/bin/python3 -m src.main
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/home/rsi/logs /tmp
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nucbox-monitoring
+
+[Install]
+WantedBy=multi-user.target

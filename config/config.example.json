@@ -1,0 +1,63 @@
+{
+  "homeassistant": {
+    "url": "http://192.168.1.100:8123",
+    "token": "YOUR_LONG_LIVED_ACCESS_TOKEN_HERE",
+    "timeout": 10
+  },
+  "thresholds": {
+    "cpu_temp": {
+      "warning": 90,
+      "critical": 95
+    },
+    "socket_temp": {
+      "warning": 35,
+      "critical": 45
+    },
+    "load_avg": {
+      "high": 3.0,
+      "normal": 1.0
+    },
+    "cpu_freq": {
+      "throttling_threshold": 3000
+    }
+  },
+  "monitoring": {
+    "interval": 30,
+    "data_file": "/mnt/pve-host/nucbox-thermal.json",
+    "http_port": 8080,
+    "enable_file_monitor": true,
+    "enable_http_server": true
+  },
+  "notifications": {
+    "rate_limit": {
+      "critical": 300,
+      "warning": 600,
+      "info": 1800,
+      "normal": 900
+    },
+    "enabled_types": [
+      "temperature_critical",
+      "temperature_warning",
+      "fan_state_change",
+      "throttling_change",
+      "workload_complete"
+    ]
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "/home/rsi/logs/nucbox-monitoring/hub.log",
+    "max_size": "10MB",
+    "backup_count": 5,
+    "console": true
+  },
+  "sensors": {
+    "thermal_zone_socket": 0,
+    "thermal_zone_cpu": 1,
+    "cooling_devices": [0, 1, 2, 3, 4]
+  },
+  "health_check": {
+    "enabled": true,
+    "endpoint": "/health",
+    "timeout": 30
+  }
+}
