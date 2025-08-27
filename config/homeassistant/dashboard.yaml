@@ -1,0 +1,85 @@
+# Home Assistant dashboard configuration for NucBox monitoring
+
+type: vertical-stack
+title: "NucBox G5 Monitoring"
+cards:
+  # Status overview card
+  - type: entities
+    title: "System Status"
+    show_header_toggle: false
+    entities:
+      - entity: sensor.nucbox_thermal_status
+        name: "Thermal Status"
+        icon: mdi:thermometer-check
+      - entity: binary_sensor.nucbox_high_temperature
+        name: "High Temperature Alert"
+      - entity: sensor.nucbox_fan_active
+        name: "Fans Active"
+        icon: mdi:fan
+      - entity: sensor.nucbox_cpu_throttling
+        name: "CPU Throttling"
+        icon: mdi:speedometer-slow
+      - entity: sensor.nucbox_load_avg
+        name: "System Load"
+        icon: mdi:chart-line
+        
+  # Temperature gauges
+  - type: horizontal-stack
+    cards:
+      - type: gauge
+        entity: sensor.nucbox_cpu_temp
+        name: "CPU Temperature"
+        min: 20
+        max: 100
+        needle: true
+        severity:
+          green: 20
+          yellow: 80
+          red: 90
+          
+      - type: gauge  
+        entity: sensor.nucbox_socket_temp
+        name: "Socket Temperature"
+        min: 20
+        max: 60
+        needle: true
+        severity:
+          green: 20
+          yellow: 35
+          red: 45
+          
+  # Temperature history graph
+  - type: history-graph
+    title: "Temperature History (24h)"
+    hours_to_show: 24
+    refresh_interval: 30
+    entities:
+      - entity: sensor.nucbox_cpu_temp
+        name: "CPU"
+      - entity: sensor.nucbox_socket_temp
+        name: "Socket"
+        
+  # System metrics
+  - type: entities
+    title: "System Metrics"
+    show_header_toggle: false
+    entities:
+      - entity: sensor.nucbox_cpu_temp
+        name: "CPU Temperature"
+        icon: mdi:chip
+      - entity: sensor.nucbox_socket_temp
+        name: "Socket Temperature"
+        icon: mdi:thermometer
+      - entity: sensor.nucbox_temperature_difference
+        name: "Temperature Difference"
+        icon: mdi:thermometer-chevron-up
+      - type: divider
+      - entity: sensor.nucbox_load_avg
+        name: "Load Average"
+        icon: mdi:chart-line
+      - entity: sensor.nucbox_fan_active
+        name: "Fans Active"
+        icon: mdi:fan
+      - entity: sensor.nucbox_cpu_throttling
+        name: "CPU Throttling"
+        icon: mdi:speedometer-slow
