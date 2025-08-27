@@ -1,0 +1,3 @@
+"""
+Thermal monitoring module
+"""
