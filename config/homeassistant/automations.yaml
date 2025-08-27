@@ -1,0 +1,111 @@
+# Home Assistant automations for NucBox monitoring
+
+# Temperature monitoring automations
+- id: nucbox_sustained_high_temp
+  alias: "NucBox Sustained High Temperature"
+  description: "Alert when CPU temperature is high for extended period"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.nucbox_cpu_temp
+      above: 90
+      for:
+        minutes: 5
+  condition:
+    - condition: state
+      entity_id: binary_sensor.nucbox_high_temperature
+      state: 'on'
+  action:
+    - service: notify.notify
+      data:
+        title: "🔥 NucBox Sustained High Temperature"
+        message: >
+          CPU temperature has been {{ states('sensor.nucbox_cpu_temp') }}°C for 5+ minutes.
+          Socket: {{ states('sensor.nucbox_socket_temp') }}°C
+          Status: {{ states('sensor.nucbox_thermal_status') }}
+        data:
+          priority: high
+          tag: nucbox-sustained-temp
+          
+- id: nucbox_temperature_spike
+  alias: "NucBox Temperature Spike"  
+  description: "Alert on rapid temperature increase"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.nucbox_cpu_temp
+      above: 85
+  condition:
+    - condition: template
+      value_template: >
+        {% set current = states('sensor.nucbox_cpu_temp') | float(0) %}
+        {% set previous = state_attr('sensor.nucbox_cpu_temp', 'previous_state') | float(0) %}
+        {{ (current - previous) > 10 }}
+  action:
+    - service: notify.notify
+      data:
+        title: "📈 NucBox Temperature Spike"
+        message: >
+          Rapid temperature increase detected.
+          Current: {{ states('sensor.nucbox_cpu_temp') }}°C
+          Checking for thermal issues...
+
+- id: nucbox_fan_activation_alert
+  alias: "NucBox Fan Activation Alert"
+  description: "Notify when fans activate (unusual for this system)"
+  trigger:
+    - platform: state
+      entity_id: sensor.nucbox_fan_active
+      from: '0'
+      to: '1'
+  action:
+    - service: notify.notify
+      data:
+        title: "💨 NucBox Fans Activated"
+        message: >
+          Fans have activated - this is unusual for normal operation.
+          CPU: {{ states('sensor.nucbox_cpu_temp') }}°C
+          Socket: {{ states('sensor.nucbox_socket_temp') }}°C
+        data:
+          priority: high
+          tag: nucbox-fans
+
+- id: nucbox_workload_complete  
+  alias: "NucBox Workload Complete"
+  description: "Notify when heavy workload completes"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.nucbox_load_avg
+      below: 1.0
+      for:
+        minutes: 2
+  condition:
+    - condition: template
+      value_template: >
+        {{ state_attr('automation.nucbox_workload_complete', 'high_load_detected') | default(false) }}
+  action:
+    - service: notify.notify
+      data:
+        title: "✅ NucBox Workload Complete"
+        message: >
+          Heavy workload appears to have completed.
+          Load average: {{ states('sensor.nucbox_load_avg') }}
+          CPU temp: {{ states('sensor.nucbox_cpu_temp') }}°C
+          
+- id: nucbox_high_load_detection
+  alias: "NucBox High Load Detection"
+  description: "Detect when high load starts"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.nucbox_load_avg
+      above: 3.0
+      for:
+        minutes: 1
+  action:
+    - service: automation.turn_on
+      data:
+        entity_id: automation.nucbox_workload_complete
+    - service: notify.notify
+      data:
+        title: "⚡ NucBox High Load Detected"
+        message: >
+          High system load detected: {{ states('sensor.nucbox_load_avg') }}
+          This might be Immich indexing or similar intensive task.

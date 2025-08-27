@@ -1,0 +1,96 @@
+# Home Assistant sensor configuration for NucBox monitoring
+
+# Template sensors for better formatting and calculations
+template:
+  - sensor:
+      - name: "NucBox Socket Temperature"
+        unique_id: "nucbox_socket_temp_formatted"
+        state: "{{ states('sensor.nucbox_socket_temp') }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        icon: mdi:thermometer
+        availability: "{{ states('sensor.nucbox_socket_temp') not in ['unavailable', 'unknown'] }}"
+        
+      - name: "NucBox CPU Temperature" 
+        unique_id: "nucbox_cpu_temp_formatted"
+        state: "{{ states('sensor.nucbox_cpu_temp') }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        icon: mdi:chip
+        availability: "{{ states('sensor.nucbox_cpu_temp') not in ['unavailable', 'unknown'] }}"
+        
+      - name: "NucBox Temperature Difference"
+        unique_id: "nucbox_temp_difference"
+        state: >
+          {% set cpu = states('sensor.nucbox_cpu_temp') | float(0) %}
+          {% set socket = states('sensor.nucbox_socket_temp') | float(0) %}
+          {{ (cpu - socket) | round(1) }}
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-chevron-up
+        
+      - name: "NucBox Thermal Status"
+        unique_id: "nucbox_thermal_status"
+        state: >
+          {% set cpu_temp = states('sensor.nucbox_cpu_temp') | float(0) %}
+          {% set socket_temp = states('sensor.nucbox_socket_temp') | float(0) %}
+          {% set fan_active = states('sensor.nucbox_fan_active') == '1' %}
+          {% set throttling = states('sensor.nucbox_cpu_throttling') == '1' %}
+          
+          {% if cpu_temp >= 95 %}
+            Critical
+          {% elif cpu_temp >= 90 %}
+            High
+          {% elif throttling %}
+            Throttling
+          {% elif fan_active %}
+            Fans Active
+          {% elif cpu_temp >= 80 %}
+            Elevated
+          {% else %}
+            Normal
+          {% endif %}
+        icon: >
+          {% set status = this.state %}
+          {% if status == 'Critical' %}
+            mdi:fire
+          {% elif status == 'High' %}
+            mdi:thermometer-high
+          {% elif status == 'Throttling' %}
+            mdi:speedometer-slow
+          {% elif status == 'Fans Active' %}
+            mdi:fan
+          {% elif status == 'Elevated' %}
+            mdi:thermometer-chevron-up
+          {% else %}
+            mdi:thermometer-check
+          {% endif %}
+
+# Binary sensors for alerts
+binary_sensor:
+  - platform: template
+    sensors:
+      nucbox_high_temperature:
+        friendly_name: "NucBox High Temperature"
+        device_class: heat
+        value_template: >
+          {{ states('sensor.nucbox_cpu_temp') | float(0) >= 90 }}
+        icon_template: >
+          {% if is_state('binary_sensor.nucbox_high_temperature', 'on') %}
+            mdi:thermometer-high
+          {% else %}
+            mdi:thermometer
+          {% endif %}
+            
+      nucbox_critical_temperature:
+        friendly_name: "NucBox Critical Temperature"
+        device_class: heat
+        value_template: >
+          {{ states('sensor.nucbox_cpu_temp') | float(0) >= 95 }}
+        icon_template: >
+          {% if is_state('binary_sensor.nucbox_critical_temperature', 'on') %}
+            mdi:fire
+          {% else %}
+            mdi:thermometer
+          {% endif %}
