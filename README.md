@@ -32,6 +32,10 @@ A comprehensive thermal and system monitoring solution for NucBox G5 (Intel N97)
 
 ## Quick Start
 
+> **Important**: This system has two parts:
+> - **Proxmox Host**: Collects sensor data (run as root)
+> - **LXC Container**: Processes data and sends to Home Assistant (run as regular user)
+
 ### 1. Clone Repository
 
 ```bash
@@ -71,11 +75,26 @@ nano ~/etc/nucbox-monitoring.json
 
 ### 4. Setup Services
 
-```bash
-# Setup Proxmox host data collector
-sudo ./scripts/setup-host.sh
+#### A. On Proxmox Host (as root)
 
+```bash
+# Clone or copy repository to Proxmox host
+cd /tmp
+git clone https://github.com/igarreta/nucbox-monitoring.git
+cd nucbox-monitoring
+
+# Make script executable
+chmod +x ./scripts/setup-host.sh
+
+# Run setup (provide your LXC container IP)
+./scripts/setup-host.sh 100.96.140.3  # Replace with your container IP
+```
+
+#### B. In LXC Container (as regular user)
+
+```bash
 # Setup container monitoring service
+cd ~/nucbox-monitoring
 ./scripts/setup-container.sh
 
 # Start services
