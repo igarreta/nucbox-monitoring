@@ -32,20 +32,69 @@ A comprehensive thermal and system monitoring solution for NucBox G5 (Intel N97)
 
 ## Quick Start
 
-> **Important**: This system has two parts:
-> - **Proxmox Host**: Collects sensor data (run as root)
-> - **LXC Container**: Processes data and sends to Home Assistant (run as regular user)
+> **Important**: This system has two parts that must be set up in order:
+> 1. **Proxmox Host** (SSH as root) - Collects hardware sensor data
+> 2. **LXC Container** (SSH as regular user) - Processes and sends data to Home Assistant
 
-### 1. Clone Repository
+---
+
+### Part A: Setup on Proxmox Host
+
+**⚠️ Run these commands on the Proxmox host itself (SSH as root)**
+
+#### 1. Install Data Collector
 
 ```bash
-# On your LXC monitoring container
+# SSH to your Proxmox host as root
+ssh root@your-proxmox-ip
+
+# Clone repository
+cd /tmp
+git clone https://github.com/igarreta/nucbox-monitoring.git
+cd nucbox-monitoring
+
+# Make script executable
+chmod +x ./scripts/setup-host.sh
+
+# Run setup script (provide your LXC container IP)
+./scripts/setup-host.sh 100.96.140.3  # Replace with your container IP
+```
+
+#### 2. Verify Host Data Collection
+
+```bash
+# Check the service is running
+systemctl status nucbox-data-collector.timer
+
+# Verify data file is being created
+cat /var/lib/vz/nucbox-thermal.json
+```
+
+---
+
+### Part B: Setup in LXC Container
+
+**⚠️ Run these commands in your LXC container (SSH as regular user)**
+
+> **Prerequisite**: Your LXC container must have the host directory mounted. Add this to your container config on the Proxmox host (`/etc/pve/lxc/YOUR_CONTAINER_ID.conf`):
+> ```
+> mp0: /var/lib/vz,mp=/mnt/pve-host
+> ```
+> Then restart the container for the mount to take effect.
+
+#### 1. Clone Repository
+
+```bash
+# SSH to your LXC container as regular user (e.g., rsi)
+ssh rsi@your-container-ip
+
+# Clone repository
 cd /home/rsi
 git clone https://github.com/igarreta/nucbox-monitoring.git
 cd nucbox-monitoring
 ```
 
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 # Create virtual environment
@@ -60,10 +109,10 @@ pip3 install -r requirements.txt
 mkdir -p ~/etc ~/logs/nucbox-monitoring
 ```
 
-### 3. Configuration
+#### 3. Configure Monitoring
 
 ```bash
-# Copy example config and edit
+# Copy example config
 cp config/config.example.json ~/etc/nucbox-monitoring.json
 
 # Create symlink
@@ -73,35 +122,47 @@ ln -s ~/etc/nucbox-monitoring.json config/config.json
 nano ~/etc/nucbox-monitoring.json
 ```
 
-### 4. Setup Services
+**Important configuration items:**
+- `homeassistant.url` - Your Home Assistant URL
+- `homeassistant.token` - Your long-lived access token (see instructions below)
+- `monitoring.data_file` - Should be `/mnt/pve-host/nucbox-thermal.json`
 
-#### A. On Proxmox Host (as root)
+<details>
+<summary><b>📝 How to Create a Home Assistant Long-Lived Access Token</b></summary>
 
+1. Log into your Home Assistant web interface
+2. Click on your **username** in the bottom left corner
+3. Scroll down to **"Long-Lived Access Tokens"**
+4. Click **"Create Token"**
+5. Give it a name like `NucBox Monitoring`
+6. Click **"OK"** and copy the token immediately (you won't see it again!)
+7. Paste the token into your `~/etc/nucbox-monitoring.json` configuration
+
+**Test the token:**
 ```bash
-# Clone or copy repository to Proxmox host
-cd /tmp
-git clone https://github.com/igarreta/nucbox-monitoring.git
-cd nucbox-monitoring
-
-# Make script executable
-chmod +x ./scripts/setup-host.sh
-
-# Run setup (provide your LXC container IP)
-./scripts/setup-host.sh 100.96.140.3  # Replace with your container IP
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  http://YOUR_HA_IP:8123/api/states
 ```
 
-#### B. In LXC Container (as regular user)
+If successful, you should see a JSON response with your entities.
+</details>
+
+#### 4. Setup and Start Service
 
 ```bash
-# Setup container monitoring service
-cd ~/nucbox-monitoring
+# Run container setup
 ./scripts/setup-container.sh
 
-# Start services
+# Start monitoring service
 sudo systemctl enable --now nucbox-monitoring
+
+# Check status
+systemctl status nucbox-monitoring
 ```
 
-### 5. Home Assistant Integration
+---
+
+### Part C: Home Assistant Integration
 
 Add to your `configuration.yaml`:
 
