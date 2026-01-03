@@ -10,7 +10,7 @@ User=rsi
 Group=rsi
 WorkingDirectory=/home/rsi/nucbox-monitoring
 Environment=PYTHONPATH=/home/rsi/nucbox-monitoring
-ExecStart=/usr/bin/python3 -m src.main
+ExecStart=/home/rsi/nucbox-monitoring/.venv/bin/python3 -m src.main
 ExecReload=/bin/kill -HUP $MAINPID
 
 # Restart policy

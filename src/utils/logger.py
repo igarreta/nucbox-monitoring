@@ -63,19 +63,33 @@ def setup_logging(config):
 
 def _parse_size(size_str):
     """Parse size string like '10MB' into bytes"""
-    size_str = size_str.upper()
-    
+    if isinstance(size_str, (int, float)):
+        return int(size_str)
+
+    size_str = str(size_str).upper().strip()
+
     multipliers = {
-        'B': 1,
-        'KB': 1024,
+        'GB': 1024 * 1024 * 1024,
         'MB': 1024 * 1024,
-        'GB': 1024 * 1024 * 1024
+        'KB': 1024,
+        'M': 1024 * 1024,  # Support 'M' as alias for 'MB'
+        'K': 1024,         # Support 'K' as alias for 'KB'
+        'G': 1024 * 1024 * 1024,  # Support 'G' as alias for 'GB'
+        'B': 1
     }
-    
+
+    # Check suffixes from longest to shortest to avoid partial matches
     for suffix, multiplier in multipliers.items():
         if size_str.endswith(suffix):
-            number = float(size_str[:-len(suffix)])
-            return int(number * multiplier)
-    
-    # Default to bytes if no suffix
-    return int(size_str)
+            number_str = size_str[:-len(suffix)].strip()
+            try:
+                number = float(number_str)
+                return int(number * multiplier)
+            except ValueError:
+                raise ValueError(f"Invalid size format: '{size_str}' - cannot parse number part")
+
+    # If no suffix, try to parse as bytes
+    try:
+        return int(float(size_str))
+    except ValueError:
+        raise ValueError(f"Invalid size format: '{size_str}' - expected number with optional suffix (B, KB, MB, GB)")

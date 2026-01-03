@@ -30,14 +30,17 @@ class MonitoringHub:
         self.config = self.load_config()
         self.logger = setup_logging(self.config.get('logging', {}))
         self.running = False
-        
+
+        # Log config load now that logger is available
+        self.logger.info(f"Configuration loaded from {self.config_path}")
+
         # Initialize components
         self.ha_client = HomeAssistantClient(self.config['homeassistant'])
         self.thermal_monitor = ThermalMonitor(
             config=self.config,
             ha_client=self.ha_client
         )
-        
+
         # Setup signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -47,13 +50,13 @@ class MonitoringHub:
         try:
             if not self.config_path.exists():
                 raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
-                
+
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
-                
-            self.logger.info(f"Configuration loaded from {self.config_path}")
+
+            # Note: logger not initialized yet at this point, will log after init
             return config
-            
+
         except Exception as e:
             print(f"Error loading configuration: {e}")
             sys.exit(1)
