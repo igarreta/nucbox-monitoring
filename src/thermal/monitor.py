@@ -13,7 +13,6 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from .sensors import SensorReader
-from ..utils.notifications import NotificationManager
 
 
 class ThermalMonitor:
@@ -26,22 +25,12 @@ class ThermalMonitor:
         
         # Initialize components
         self.sensor_reader = SensorReader(config.get('sensors', {}))
-        self.notification_manager = NotificationManager(
-            ha_client=ha_client,
-            config=config.get('notifications', {})
-        )
         
         # State tracking
-        self.last_state = {
-            'fan_active': False,
-            'throttling': False,
-            'high_load': False,
-            'last_notification_times': {}
-        }
-        
+        self.last_state = {}
+
         # Configuration
         self.monitoring_config = config.get('monitoring', {})
-        self.thresholds = config.get('thresholds', {})
         
         # Threading
         self.running = False
@@ -173,12 +162,6 @@ class ThermalMonitor:
             # Update Home Assistant sensors
             self._update_ha_sensors(data)
             
-            # Check for alerts
-            self._check_temperature_alerts(socket_temp, cpu_temp)
-            self._check_fan_alerts(fan_active, socket_temp, cpu_temp, fan_states)
-            self._check_throttling_alerts(cpu_freq)
-            self._check_load_alerts(load_avg)
-            
         except Exception as e:
             self.logger.error(f"Error processing thermal data: {e}", exc_info=True)
             
@@ -216,104 +199,7 @@ class ThermalMonitor:
                 self.ha_client.update_sensor(entity_id, state, attributes)
             except Exception as e:
                 self.logger.error(f"Failed to update sensor {entity_id}: {e}")
-                
-    def _check_temperature_alerts(self, socket_temp, cpu_temp):
-        """Check and send temperature alerts"""
-        cpu_thresholds = self.thresholds.get('cpu_temp', {})
-        socket_thresholds = self.thresholds.get('socket_temp', {})
-        
-        # CPU temperature alerts
-        if cpu_temp >= cpu_thresholds.get('critical', 95):
-            self.notification_manager.send_notification(
-                "🚨 NucBox Critical Temperature",
-                f"CPU temperature is {cpu_temp}°C (Critical: {cpu_thresholds['critical']}°C+)",
-                priority="critical",
-                notification_type="temperature_critical"
-            )
-        elif cpu_temp >= cpu_thresholds.get('warning', 90):
-            self.notification_manager.send_notification(
-                "⚠️ NucBox High Temperature", 
-                f"CPU temperature is {cpu_temp}°C (Warning: {cpu_thresholds['warning']}°C+)",
-                priority="high",
-                notification_type="temperature_warning"
-            )
-            
-        # Socket temperature alerts
-        if socket_temp >= socket_thresholds.get('critical', 45):
-            self.notification_manager.send_notification(
-                "🚨 NucBox Socket Overheating",
-                f"Socket temperature is {socket_temp}°C - Fans should activate!",
-                priority="critical",
-                notification_type="temperature_critical"
-            )
-        elif socket_temp >= socket_thresholds.get('warning', 35):
-            self.notification_manager.send_notification(
-                "⚠️ NucBox Socket Warming",
-                f"Socket temperature is {socket_temp}°C - Monitor closely",
-                priority="high", 
-                notification_type="temperature_warning"
-            )
-            
-    def _check_fan_alerts(self, fan_active, socket_temp, cpu_temp, fan_states):
-        """Check fan status changes"""
-        if fan_active and not self.last_state['fan_active']:
-            self.notification_manager.send_notification(
-                "💨 NucBox Fans Activated",
-                f"Socket: {socket_temp}°C, CPU: {cpu_temp}°C, Fan states: [{fan_states}]",
-                priority="normal",
-                notification_type="fan_state_change"
-            )
-        elif not fan_active and self.last_state['fan_active']:
-            self.notification_manager.send_notification(
-                "✅ NucBox Fans Deactivated", 
-                f"Temperatures normalized. Socket: {socket_temp}°C, CPU: {cpu_temp}°C",
-                priority="normal",
-                notification_type="fan_state_change"
-            )
-            
-        self.last_state['fan_active'] = fan_active
-        
-    def _check_throttling_alerts(self, cpu_freq):
-        """Check CPU throttling status"""
-        throttling_threshold = self.thresholds.get('cpu_freq', {}).get('throttling_threshold', 3000)
-        throttling = cpu_freq < throttling_threshold
-        
-        if throttling and not self.last_state['throttling']:
-            self.notification_manager.send_notification(
-                "🐌 NucBox CPU Throttling",
-                f"CPU frequency reduced to {cpu_freq}MHz (thermal protection active)",
-                priority="high",
-                notification_type="throttling_change"
-            )
-        elif not throttling and self.last_state['throttling']:
-            self.notification_manager.send_notification(
-                "🚀 NucBox CPU Throttling Ended",
-                f"CPU frequency restored to {cpu_freq}MHz", 
-                priority="normal",
-                notification_type="throttling_change"
-            )
-            
-        self.last_state['throttling'] = throttling
-        
-    def _check_load_alerts(self, load_avg):
-        """Check system load changes"""
-        load_thresholds = self.thresholds.get('load_avg', {})
-        high_threshold = load_thresholds.get('high', 3.0)
-        normal_threshold = load_thresholds.get('normal', 1.0)
-        
-        high_load = load_avg > high_threshold
-        
-        if load_avg < normal_threshold and self.last_state['high_load']:
-            self.notification_manager.send_notification(
-                "✅ NucBox Workload Complete",
-                f"System load normalized ({load_avg}). Likely Immich indexing finished!",
-                priority="normal",
-                notification_type="workload_complete"
-            )
-            self.last_state['high_load'] = False
-        elif high_load:
-            self.last_state['high_load'] = True
-            
+
     def test_sensors(self):
         """Test sensor reading functionality"""
         self.logger.info("Testing sensor functionality...")
@@ -336,6 +222,5 @@ class ThermalMonitor:
         return {
             'running': self.running,
             'last_state': self.last_state.copy(),
-            'thresholds': self.thresholds,
             'ha_connection': self.ha_client.test_connection() if self.ha_client else False
         }
