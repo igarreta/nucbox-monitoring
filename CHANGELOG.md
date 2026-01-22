@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **BREAKING**: Removed alarm and notification functionality from Python monitoring code
+- All alerting is now handled by Home Assistant automations
+- Python code now only sends sensor data to Home Assistant
+- Simplified configuration by removing `thresholds` and `notifications` sections
+
+### Removed
+- NotificationManager class and notification handling
+- Alert checking methods (temperature, fan, throttling, load alerts)
+- Rate limiting functionality (now handled by Home Assistant)
+- Threshold configuration in config files
+
+### Migration Guide
+If upgrading from v1.0.0:
+1. Import the provided Home Assistant automations from `config/homeassistant/automations.yaml`
+2. Update your `config.json` to remove `thresholds` and `notifications` sections
+3. Restart the monitoring service
+4. All existing sensors will continue to work; notifications now come from Home Assistant automations
+
 ## [1.0.0] - 2024-12-19
 
 ### Added

@@ -6,8 +6,7 @@ A comprehensive thermal and system monitoring solution for NucBox G5 (Intel N97)
 
 - 🌡️ **Real-time thermal monitoring** - CPU die and socket temperatures
 - 💨 **Fan status monitoring** - Track fan activation and states
-- 🚨 **Smart alerting** - Temperature thresholds and state change notifications
-- 📊 **Home Assistant integration** - Sensors, history, and mobile notifications
+- 📊 **Home Assistant integration** - Sensors, history, and automations
 - 🔧 **Throttling detection** - Monitor CPU frequency scaling
 - 📈 **Load monitoring** - Track system load and workload completion
 - 🏠 **Hybrid architecture** - Host data collection + containerized processing
@@ -168,9 +167,13 @@ Add to your `configuration.yaml`:
 
 ```yaml
 # Include the provided HA configuration
-sensor: !include integrations/homeassistant/sensors.yaml
-automation: !include integrations/homeassistant/automations.yaml
+sensor: !include nucbox-monitoring/sensors.yaml
+automation: !include nucbox-monitoring/automations.yaml
 ```
+
+Copy the files from the repository to your Home Assistant config directory:
+- `config/homeassistant/sensors.yaml` → Your HA config directory
+- `config/homeassistant/automations.yaml` → Your HA config directory
 
 ## Configuration
 
@@ -181,16 +184,6 @@ automation: !include integrations/homeassistant/automations.yaml
   "homeassistant": {
     "url": "http://192.168.1.100:8123",
     "token": "your_long_lived_access_token"
-  },
-  "thresholds": {
-    "cpu_temp": {
-      "warning": 90,
-      "critical": 95
-    },
-    "socket_temp": {
-      "warning": 35,
-      "critical": 45
-    }
   },
   "monitoring": {
     "interval": 30,
@@ -205,13 +198,6 @@ automation: !include integrations/homeassistant/automations.yaml
   }
 }
 ```
-
-### Temperature Thresholds
-
-| Component | Warning | Critical | Action |
-|-----------|---------|----------|--------|
-| CPU Die   | 90°C    | 95°C     | Notification + throttling check |
-| Socket    | 35°C    | 45°C     | Fan activation expected |
 
 ## Usage
 
@@ -259,13 +245,15 @@ Import the provided dashboard configuration:
 
 ### Notifications
 
-The system sends notifications for:
+Notifications are handled by Home Assistant automations (see `config/homeassistant/automations.yaml`). The provided automations include alerts for:
 
-- 🚨 **Critical temperatures** (immediate)
-- ⚠️ **High temperatures** (warning)
-- 💨 **Fan activation/deactivation**
-- 🐌 **CPU throttling start/stop**
-- ✅ **Workload completion** (load drop)
+- 🚨 **Sustained high temperatures** - CPU temp > 90°C for 5+ minutes
+- 📈 **Temperature spikes** - Rapid temperature increases (> 10°C)
+- 💨 **Fan activation** - Unusual for passive cooling systems
+- ⚡ **High system load** - Load average > 3.0
+- ✅ **Workload completion** - Load normalizes after high usage
+
+You can customize these automations or add your own in Home Assistant.
 
 ## Troubleshooting
 
