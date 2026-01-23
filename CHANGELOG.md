@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CPU frequency sensor published to Home Assistant as `sensor.nucbox_cpu_freq`
+- Direct access to CPU frequency for dashboards and automations
+
 ### Changed
 - **BREAKING**: Removed alarm and notification functionality from Python monitoring code
 - All alerting is now handled by Home Assistant automations

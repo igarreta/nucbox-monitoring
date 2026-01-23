@@ -174,9 +174,15 @@ class ThermalMonitor:
                 'friendly_name': 'NucBox Socket Temperature'
             }),
             ('nucbox_cpu_temp', data['cpu_temp'], {
-                'unit_of_measurement': '°C', 
+                'unit_of_measurement': '°C',
                 'device_class': 'temperature',
                 'friendly_name': 'NucBox CPU Temperature'
+            }),
+            ('nucbox_cpu_freq', data['cpu_freq'], {
+                'unit_of_measurement': 'MHz',
+                'device_class': 'frequency',
+                'friendly_name': 'NucBox CPU Frequency',
+                'icon': 'mdi:chip'
             }),
             ('nucbox_fan_active', int(data['fan_active']), {
                 'device_class': 'running',
