@@ -239,6 +239,7 @@ Import the provided dashboard configuration:
 
 - `sensor.nucbox_socket_temp` - Socket temperature (°C)
 - `sensor.nucbox_cpu_temp` - CPU die temperature (°C)
+- `sensor.nucbox_cpu_freq` - CPU frequency (MHz)
 - `sensor.nucbox_fan_active` - Fan status (0/1)
 - `sensor.nucbox_cpu_throttling` - Throttling status (0/1)
 - `sensor.nucbox_load_avg` - System load average

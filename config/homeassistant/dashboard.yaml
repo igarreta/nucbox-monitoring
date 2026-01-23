@@ -73,6 +73,9 @@ cards:
       - entity: sensor.nucbox_temperature_difference
         name: "Temperature Difference"
         icon: mdi:thermometer-chevron-up
+      - entity: sensor.nucbox_cpu_freq
+        name: "CPU Frequency"
+        icon: mdi:chip
       - type: divider
       - entity: sensor.nucbox_load_avg
         name: "Load Average"
