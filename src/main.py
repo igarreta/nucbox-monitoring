@@ -72,9 +72,12 @@ class MonitoringHub:
         
         try:
             # Test Home Assistant connection
-            if not self.ha_client.test_connection():
-                self.logger.error("Failed to connect to Home Assistant")
-                return False
+            retry_interval = 30
+            while not self.ha_client.test_connection():
+                self.logger.warning(
+                    f"Cannot reach Home Assistant, retrying in {retry_interval}s..."
+                )
+                time.sleep(retry_interval)
                 
             self.running = True
             
